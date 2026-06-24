@@ -1,16 +1,7 @@
 import { Command } from "commander";
+import { sendTelegramMessage } from "sendkit-core";
 
 const program = new Command();
-
-
-type TelegramResponse = {
-    ok: boolean;
-    result?: {
-        message_id?: number;
-    };
-    description?: string;
-}
-
 program
     .name("sendkit")
     .description("sendkitter")
@@ -18,11 +9,8 @@ program
     .argument("<chatId>", 'telegram chat ID')
     .argument("<message>", 'message to be sent')
     .action(async (chatId: string, message: string) => {
-
-        const token = process.env.TELEGRAM_BOT_TOKEN;
-
-
-        if (!token) {
+        const botToken = process.env.TELEGRAM_BOT_TOKEN;
+        if (!botToken) {
             console.error("TELEGRAM_BOT_TOKEN environment variable is not set.");
             process.exit(1);
         }
@@ -37,29 +25,19 @@ program
             process.exit(1);
         }
 
-        const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: message
+        try {
+            const result = await sendTelegramMessage({
+                botToken,
+                chatId,
+                message
             })
-        });
 
-        const data = (await response.json()) as TelegramResponse;
-
-        if (!response.ok || !data.ok) {
-            const detail = data.description ?? response.statusText;
-            console.error(`Telegram API request failed: ${detail}`);
+            console.log(result.chatId, result.messageId);
+        } catch (error) {
+            const detail = error instanceof Error ? error.message: String(error);
+            console.error(`Telegram API request failed: ${detail}`)
             process.exit(1);
         }
-
-        const messageId = data.result?.message_id;
-
-        console.log(`Sent Telegram message to chat: ${chatId}. ${messageId && `ID: ${messageId}`}`); 
-
     })
 
 program.parseAsync(process.argv);
