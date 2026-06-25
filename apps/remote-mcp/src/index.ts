@@ -1,125 +1,127 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { Hono, type Context } from "hono"
-import { sendTelegramMessage, telegramMessageInputSchema } from "sendkit-core"
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js"
-import { createClerkClient } from "@clerk/backend"
-import { generateClerkProtectedResourceMetadata } from "@clerk/mcp-tools/server"
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Hono, type Context } from "hono";
+import { sendTelegramMessage, telegramMessageInputSchema } from "sendkit-core";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { createClerkClient } from "@clerk/backend";
+import { generateClerkProtectedResourceMetadata } from "@clerk/mcp-tools/server";
 
 const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY;
 
 const clerkSecretKey = process.env.CLERK_SECRET_KEY;
 
-if(!clerkPublishableKey) {
-    throw new Error("CLERK_PUBLISHABLE_KEY is missing")
+if (!clerkPublishableKey) {
+  throw new Error("CLERK_PUBLISHABLE_KEY is missing");
 }
 
-if(!clerkSecretKey) {
-    throw new Error("CLERK_SECRET_KEY is missing")
+if (!clerkSecretKey) {
+  throw new Error("CLERK_SECRET_KEY is missing");
 }
 
 const clerkClient = createClerkClient({
-    publishableKey: clerkPublishableKey,
-    secretKey: clerkSecretKey
-})
-
+  publishableKey: clerkPublishableKey,
+  secretKey: clerkSecretKey,
+});
 
 const createServer = (botToken: string) => {
-    const server = new McpServer({
-        name: "sendkit-remote",
-        version: "0.0.0"
-    })
-    server.registerTool("telegram", {
-            title: "telegram",
-            description: "send a telegram message",
-            inputSchema: telegramMessageInputSchema.shape
-        },
-        async (input) => {
-            const result = await sendTelegramMessage({
-                ...input, 
-                botToken
-            })
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Sent telegram message ${result.messageId} to chat ${result.chatId}`
-                    }
-                ],
-                structuredContent: result
-            }
-        }
-    )
-    return server;
-}
+  const server = new McpServer({
+    name: "sendkit-remote",
+    version: "0.0.0",
+  });
+  server.registerTool(
+    "telegram",
+    {
+      title: "telegram",
+      description: "send a telegram message",
+      inputSchema: telegramMessageInputSchema.shape,
+    },
+    async (input) => {
+      const result = await sendTelegramMessage({
+        ...input,
+        botToken,
+      });
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Sent telegram message ${result.messageId} to chat ${result.chatId}`,
+          },
+        ],
+        structuredContent: result,
+      };
+    },
+  );
+  return server;
+};
 
 const app = new Hono();
 
 const protectedResourceMetadataUrl = (c: Context, botToken: string) => {
-    return new URL(`/.well-known/oauth-protected-resource/${botToken}/mcp`, c.req.url).toString()
-}
+  return new URL(`/.well-known/oauth-protected-resource/${botToken}/mcp`, c.req.url).toString();
+};
 
 const unauthorizedMcpResponse = (c: Context, botToken: string) => {
-    c.header("WWW-Authenticate",
-        `Bearer resource_metadata="${protectedResourceMetadataUrl(c, botToken)}"`
-    )
+  c.header(
+    "WWW-Authenticate",
+    `Bearer resource_metadata="${protectedResourceMetadataUrl(c, botToken)}"`,
+  );
 
-    return c.json({ error: "Unauthorized"}, 401)
-}
+  return c.json({ error: "Unauthorized" }, 401);
+};
 app.get("/.well-known/oauth-protected-resource/:botToken/mcp", (c) => {
-    return c.json(generateClerkProtectedResourceMetadata({
-        publishableKey: clerkPublishableKey,
-        resourceUrl: new URL(`/${c.req.param("botToken")}/mcp`, c.req.url).toString()
-    }))
-})
-
-
+  return c.json(
+    generateClerkProtectedResourceMetadata({
+      publishableKey: clerkPublishableKey,
+      resourceUrl: new URL(`/${c.req.param("botToken")}/mcp`, c.req.url).toString(),
+    }),
+  );
+});
 
 app.post("/:botToken/mcp", async (c) => {
-    const botToken = c.req.param("botToken");
-    const authHeader = c.req.header("authorization")
+  const botToken = c.req.param("botToken");
+  const authHeader = c.req.header("authorization");
 
-    if(!authHeader?.startsWith("Bearer ")) {
-        return unauthorizedMcpResponse(c, botToken)
-    }
+  if (!authHeader?.startsWith("Bearer ")) {
+    return unauthorizedMcpResponse(c, botToken);
+  }
 
-    try {
-        const requestState = await clerkClient.authenticateRequest(c.req.raw, {
-            acceptsToken: "oauth_token"
-        })
+  try {
+    const requestState = await clerkClient.authenticateRequest(c.req.raw, {
+      acceptsToken: "oauth_token",
+    });
 
-        if(!requestState.isAuthenticated) {
-            return unauthorizedMcpResponse(c, botToken);
-        }  
-    } catch {
-        return unauthorizedMcpResponse(c, botToken);
+    if (!requestState.isAuthenticated) {
+      return unauthorizedMcpResponse(c, botToken);
     }
-    
-    const server = createServer(botToken);
-    const transport = new WebStandardStreamableHTTPServerTransport({
-        sessionIdGenerator: undefined,
-        enableJsonResponse: true
-    })
-    await server.connect(transport);
-    try {
-        return await transport.handleRequest(c.req.raw);   
-    } finally {
-        await server.close();
-    }
-})
+  } catch {
+    return unauthorizedMcpResponse(c, botToken);
+  }
+
+  const server = createServer(botToken);
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
+  });
+  await server.connect(transport);
+  try {
+    return await transport.handleRequest(c.req.raw);
+  } finally {
+    await server.close();
+  }
+});
 
 app.notFound((c) => {
-    return c.json({ error: "Not found. "}, 404);
-})
+  return c.json({ error: "Not found. " }, 404);
+});
 
 const port = Number(process.env.PORT || 3000);
 
 export default {
-    port,
-    fetch: (req: Request) => {
-        const url = new URL(req.url);
-        url.protocol = req.headers.get("x-forwarded-proto") ?? url.protocol
-        url.host = req.headers.get("x-forwarded-host") ?? url.host
+  port,
+  fetch: (req: Request) => {
+    const url = new URL(req.url);
+    url.protocol = req.headers.get("x-forwarded-proto") ?? url.protocol;
+    url.host = req.headers.get("x-forwarded-host") ?? url.host;
 
-        return app.fetch(new Request(url, req))
-    }
-}
+    return app.fetch(new Request(url, req));
+  },
+};
