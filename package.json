@@ -15,7 +15,10 @@
     "lint": "oxlint . --deny-warnings",
     "lint: fix": "oxlint . --fix",
     "typecheck": "tsc --noEmit",
-    "fix": "tsc --noEmit && oxlint . --deny-warnings && oxfmt . --write"
+    "fix": "tsc --noEmit && oxlint . --deny-warnings && oxfmt . --write",
+    "build:core": "bun run --filter @owdx-dev/sendkit-core build",
+    "build:cli": "bun run --filter @owdx-dev/sendkit build",
+    "build:local-mcp": "bun run --filter @owdx-dev/sendkit-mcp build"
   },
   "dependencies": {
     "@types/node": "^26.0.1"
