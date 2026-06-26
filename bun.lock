@@ -21,13 +21,13 @@
         "@clerk/backend": "^3.8.3",
         "@clerk/mcp-tools": "^0.5.0",
         "@modelcontextprotocol/sdk": "^1.29.0",
-        "@owdx-dev/sendkit-core": "workspace:*",
+        "@owdx-dev/sendkit-core": "0.0.1",
         "hono": "^4.12.27",
       },
     },
     "packages/cli": {
       "name": "@owdx-dev/sendkit",
-      "version": "0.0.0",
+      "version": "0.0.1",
       "dependencies": {
         "@owdx-dev/sendkit-core": "workspace:*",
         "commander": "^15.0.0",
@@ -36,14 +36,14 @@
     },
     "packages/core": {
       "name": "@owdx-dev/sendkit-core",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "zod": "^4.4.3",
       },
     },
     "packages/local-mcp": {
       "name": "@owdx-dev/sendkit-mcp",
-      "version": "0.0.0",
+      "version": "0.0.2",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.29.0",
         "@owdx-dev/sendkit-core": "workspace:*",
@@ -475,6 +475,8 @@
     "zod-to-json-schema": ["zod-to-json-schema@3.25.2", "", { "peerDependencies": { "zod": "^3.25.28 || ^4" } }, "sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA=="],
 
     "body-parser/content-type": ["content-type@2.0.0", "", {}, "sha512-j/O/d7GcZCyNl7/hwZAb606rzqkyvaDctLmckbxLzHvFBzTJHuGEdodATcP3yIRoDrLHkIATJuvzbFlp/ki2cQ=="],
+
+    "sendkit-remote-mcp/@owdx-dev/sendkit-core": ["@owdx-dev/sendkit-core@0.0.1", "", { "dependencies": { "zod": "^4.4.3" } }, "sha512-tnDA1bSh2gB4+gWO+uoUacKsNDqy+Ffp3Q75Nd+sJntdSerwCpObYor6i+15tm0DK0Ag2FlyJ8TC6Lkv6j0v8A=="],
 
     "type-is/content-type": ["content-type@2.0.0", "", {}, "sha512-j/O/d7GcZCyNl7/hwZAb606rzqkyvaDctLmckbxLzHvFBzTJHuGEdodATcP3yIRoDrLHkIATJuvzbFlp/ki2cQ=="],
   }
