@@ -6,7 +6,6 @@ import { createClerkClient } from "@clerk/backend";
 import { generateClerkProtectedResourceMetadata } from "@clerk/mcp-tools/server";
 
 const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY;
-
 const clerkSecretKey = process.env.CLERK_SECRET_KEY;
 
 if (!clerkPublishableKey) {
