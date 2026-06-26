@@ -18,7 +18,10 @@
     "fix": "tsc --noEmit && oxlint . --deny-warnings && oxfmt . --write",
     "build:core": "bun run --filter @owdx-dev/sendkit-core build",
     "build:cli": "bun run --filter @owdx-dev/sendkit build",
-    "build:local-mcp": "bun run --filter @owdx-dev/sendkit-mcp build"
+    "build:local-mcp": "bun run --filter @owdx-dev/sendkit-mcp build",
+    "release:pack:core": "bun run --filter @owdx-dev/sendkit-core pack:dry",
+    "release:pack:cli": "bun run --filter @owdx-dev/sendkit pack:dry",
+    "release:pack:local-mcp": "bun run --filter @owdx-dev/sendkit-mcp pack:dry"
   },
   "dependencies": {
     "@types/node": "^26.0.1"
